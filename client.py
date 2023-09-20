@@ -36,31 +36,36 @@ class color:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+    @staticmethod
+    def reset():
+        print(color.RESET, end="")
+
 # Functions
 def take_quiz(quiz_data):
     answers = []
     for i in quiz_data:
         system("cls")
-        print("="*55 + f"\n= {i['name']: <50} ==\n" + "="*55 + "\n")
+        print(color.GREEN+"="*55 + f"\n= {color.CYAN}{i['name']: <50}{color.GREEN} ==\n" + "="*55 + "\n"+color.RESET)
         qdata = i["data"]
         print(qdata["question"])
         if i["type"] == "qa":
-            ans = input("Answer: ")
+            ans = input(color.YELLOW+"Answer: "+color.RESET)
+            color.reset()
             answers.append(ans)
         elif i["type"] == "4an":
             while True:
                 #print("\n".join([f"[{ind}] "+str(item) for ind,item in enumerate(qdata["answers"])]))
-                print(f" [1] {qdata['answers'][0]} | [2] {qdata['answers'][1]}\n [3] {qdata['answers'][2]} | [4] {qdata['answers'][3]} ")
-                ans = int(input("Answer (Choose index of answer): "))
+                print(f" {color.GREEN}[1] {color.CYAN}{qdata['answers'][0]} {color.RESET}| {color.GREEN}[2] {color.CYAN}{qdata['answers'][1]}\n {color.GREEN}[3] {color.CYAN}{qdata['answers'][2]} {color.RESET}| {color.GREEN}[4] {color.CYAN}{qdata['answers'][3]} ")
+                ans = int(input(color.YELLOW+"Answer (Choose index of answer): "+color.RESET))
                 if not ans<5 and ans>0: continue
-                answers.append(int(ans)-1)
+                answers.append(int(ans))
                 break
         elif i["type"] == "multi":
-            print("\n".join([f"[{ind}] "+str(item) for ind,item in enumerate(qdata['answers'])]))
-            ans = input("Answer (Choose indexes of answers): ")
+            print("\n".join([f"{color.GREEN}[{ind}] {color.CYAN}"+str(item) for ind,item in enumerate(qdata['answers'])]))
+            ans = input(color.YELLOW+"Answer (Choose indexes of answers): ")
             answers.append(ans)
         elif i["type"] == "code":
-            with open("answer", "w") as f: f.write("Type the answer HERE!")
+            with open("answer", "w") as f: f.write("Type the answer HERE!\n")
             system("notepad answer")
             #input("~ Press Enter if you done writing ")
             with open("answer", "r") as f: ans = f.read()
@@ -68,7 +73,7 @@ def take_quiz(quiz_data):
             answers.append(ans)
         if i["type"] == "yn":
             while True:
-                ans = input("Answer [yes,no/true,false]: ").strip()
+                ans = input(color.YELLOW+"Answer [yes,no/true,false]: ").strip()
                 if ans.lower()=="yes" or ans.lower()=="true":
                     ans = "+"
                     break
@@ -79,10 +84,10 @@ def take_quiz(quiz_data):
     return answers
 def print_log(*text, priority=0):
     if DEBUG:
-        if priority==0: prefix="[INFO]"
-        elif priority==1: prefix="[WARN]"
-        elif priority==2: prefix="[CRIT]"
-        elif priority==2: prefix="[EROR]"
+        if priority==0: prefix=  f"[{color.CYAN}INFO{color.RESET}]"
+        elif priority==1: prefix=f"[{color.YELLOW}WARN{color.RESET}]"
+        elif priority==2: prefix=f"[{color.PURPLE}CRIT{color.RESET}]"
+        elif priority==3: prefix=f"[{color.RED}EROR{color.RESET}]"
         else: prefix=""
 
         print(prefix, " ".join(text))
@@ -207,6 +212,10 @@ if __name__ == "__main__":
     # Create threads
     threads = [Thread(target=send_thread,    args=(client_socket,)),
                Thread(target=receive_thread, args=(client_socket,))]
+
+    threads[0].setDaemon = True
+    threads[1].setDaemon = True
+
     threads[0].start()
     threads[1].start()
 

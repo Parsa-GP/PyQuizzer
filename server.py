@@ -38,7 +38,7 @@ quiz_data = {
             },
 
             {
-                "name": "question 2 (4 gozine ii)",
+                "name": "question 2 (4 answer)",
                 "type": "4an",
                 "data": {
                     "question": "what is 1+1?",
@@ -53,7 +53,7 @@ quiz_data = {
                 "data": {
                     "question": "select odd numbers.",
                     "answers": ["1", "2", "3", "4", "5", "6"],
-                    "answer": [0,2,4] #index of item in answers
+                    "answer": [0,2,4] #index of items in answers
                 }
             },
 
@@ -62,7 +62,7 @@ quiz_data = {
                 "type": "code",
                 "data": {
                     "question": "how to 1+1 in python?\nSet \"number\" variable to 1+1",
-                    "answers": ["number=1+1", "number = 1 + 1", "number=1;number+=1"]
+                    "answers": ["number=1+1", "number=1;number+=1"]
                 }
             },
 
@@ -83,7 +83,7 @@ quiz_data = {
                 "type": "yn",
                 "data": {
                     "question": "yes?",
-                    "answer": False
+                    "answer": True
                 }
             }
         ],
@@ -100,46 +100,18 @@ quiz_data = {
     }
 }
 
-"""def print_df(data, index=False):
-#formatters = {'Text': lambda x: x.ljust(6), 'Value': lambda x: str(x).ljust(6)}
-df = DataFrame(data);df.index.name = 'ID'
-#print(df.to_string(formatters=formatters, index=index))
-print(df.to_string(index=index))
-
-headers = list(data.keys())
-max_col_widths = [max(len(str(cell)) for cell in [header] + values) for header, values in data.items()]
-header_row = ' | '.join(format(header, f'<{width}') for header, width in zip(headers, max_col_widths))
-print(header_row);print('-' * len(header_row))
-for row in zip(*data.values()):
-    formatted_row = ' | '.join(format(str(cell), f'<{width}') for cell, width in zip(row, max_col_widths))
-    print(formatted_row)"""
-
 def cls():
     system("cls")
 
-def title(text:str):
-    print("="*25 + f"\n= {text: <20} ==\n" + "="*25 + "\n")
-
-
-def take_input(q, *items, err="The selected option is not valid."):
-    print(q)
-    print("\n".join([f"[{ind}] "+str(item) for ind,item in enumerate(items)]))
-    while True:
-        i = int(input(":> "))
-        if i>=len(items) or i<1:
-            print(err)
-        else: break
-    return (i, items[i])
-
 def print_log(*text, priority=0):
     if test:
-        if priority==0: prefix="[INFO]"
-        elif priority==1: prefix="[WARN]"
-        elif priority==2: prefix="[CRIT]"
-        elif priority==2: prefix="[EROR]"
+        if priority==0: prefix=  f"[{color.BOLD}{color.CYAN}INFO{color.RESET}]{color.CYAN}"
+        elif priority==1: prefix=f"[{color.BOLD}{color.YELLOW}WARN{color.RESET}]{color.YELLOW}"
+        elif priority==2: prefix=f"[{color.BOLD}{color.PURPLE}CRIT{color.RESET}]{color.PURPLE}"
+        elif priority==3: prefix=f"[{color.BOLD}{color.RED}EROR{color.RESET}]{color.RED}"
         else: prefix=""
 
-        print(prefix, " ".join(text))
+        print(prefix, " ".join(text), color.RESET)
 
 def start_server(port):
     global quiz_data
@@ -179,22 +151,26 @@ def start_server(port):
                 print(tabulate(table_data, headers='keys', tablefmt='presto'))
                 while True:
                     try:
-                        quizname = list(class_data.keys())[int(input("QuizName:> "))]
+                        quizname = list(class_data.keys())[int(input("QuizIndex:> "))]
                         break
                     except IndexError: pass
                 response = "quiz: " + \
                            b64encode(dumps(class_data[quizname]).encode()).decode("utf-8")
-                client_socket.send(response.encode())
+                try:
+                    client_socket.send(response.encode())
+                except ConnectionResetError:
+                    print_log("An connection was forcibly closed", priority=3)
                 print_log(f"Quiz Sent for {userdata[2]}!")
             elif rdata[0] == "answers":
                 print_log(f"Got Answers from {rdata[1]}")
-                print_log(f"{rdata[1]}'s Answers: ", rdata[2])
                 # do grade stuff
-                # For testing: grade = len(rdata[2])
                 grade = -1 # because if grade eqals to -1, then client won't print the grade!
                 print_log(f"Grade for {rdata[1]} is {grade}!")
                 response = "grade:" + b64encode(str(grade).encode()).decode("utf-8")
-                client_socket.send(response.encode())
+                try:
+                    client_socket.send(response.encode())
+                except ConnectionResetError:
+                    print_log("An connection was forcibly closed", priority=3)
                 print_log("Grade Sent!")
         client_socket.close()
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
