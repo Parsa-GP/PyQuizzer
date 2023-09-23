@@ -1,0 +1,76 @@
+{
+    "Advanced Python": {
+        "Final Quiz": [
+            {
+                "name": "question 1 (Straight question and answer)",
+                "type": "qa",
+                "data": {
+                    "question": "what is 1+1?",
+                    "answers": ["2", "5-3"]
+                }
+            },
+
+            {
+                "name": "question 2 (4 answer)",
+                "type": "4an",
+                "data": {
+                    "question": "what is 1+1?",
+                    "answers": ["1", "2", "3", "4"],
+                    "answer": 1 ,
+                    "_comment":"index of item in answers"
+                }
+            },
+
+            {
+                "name": "question 3 (multiselect)",
+                "type": "multi",
+                "data": {
+                    "question": "select odd numbers.",
+                    "answers": ["1", "2", "3", "4", "5", "6"],
+                    "answer": [1,3,5],
+                    "_comment":"index of items in answers"
+                }
+            },
+
+            {
+                "name": "question 4 (gimme code)",
+                "type": "code",
+                "data": {
+                    "question": "how to 1+1 in python?\nSet \"number\" variable to 1+1",
+                    "answers": ["number=1+1", "number=1;number+=1"]
+                }
+            },
+
+            {
+                "name": "question 5 (yes no)",
+                "type": "yn",
+                "data": {
+                    "question": "are you a human?",
+                    "answer": true
+                }
+            }
+        ]
+    },
+    "Beginner Py": {
+        "Starter Quiz": [
+            {
+                "name": "iq test",
+                "type": "yn",
+                "data": {
+                    "question": "yes?",
+                    "answer": true
+                }
+            }
+        ],
+        "Final Quiz": [
+            {
+                "name": "input test",
+                "type": "yn",
+                "data": {
+                    "question": "if i write number in input(), the function is going to convert it to intger?",
+                    "answer": false
+                }
+            }
+        ]
+    }
+}

@@ -5,5 +5,8 @@
 - [ ] Do not ask if a class has only one quizz
 - [ ] Grade calculator System
 - [ ] A way to send a picture as question
-- [ ] Clean the `server.py`` Code
+- [X] Clean the `server.py`` Code
 - [X] Color code logs
+- [X] Store questions in a File
+- [ ] Store Config in a File
+- [ ] Store user answers in a file or something

@@ -1,11 +1,11 @@
-# shoutout to https://stackoverflow.com/questions/33434007/python-socket-send-receive-messages-at-the-same-time!
-#from pandas import DataFrame
+# BIG Shout-out to https://stackoverflow.com/questions/33434007/
 from base64 import b64decode,b64encode
-from json import dumps,loads
-from os import system
+from json import dumps,loads,load
+from os import system,path
 from sys import exit
 from dbman import *
 
+# Got from https://stackoverflow.com/questions/287871/
 class color:
     PURPLE = '\033[95m'
     BLUE = '\033[94m'
@@ -17,94 +17,11 @@ class color:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-try:
-    from tabulate import tabulate
-except ImportError:
-    system("pip install tabulate")
-    from tabulate import tabulate
-
-test=True
-
-quiz_data = {
-    "Advanced Python": {
-        "Final Quiz": [
-            {
-                "name": "question 1 (Straight question and answer)",
-                "type": "qa",
-                "data": {
-                    "question": "what is 1+1?",
-                    "answers": ["2", "5-3"]
-                }
-            },
-
-            {
-                "name": "question 2 (4 answer)",
-                "type": "4an",
-                "data": {
-                    "question": "what is 1+1?",
-                    "answers": ["1", "2", "3", "4"],
-                    "answer": 1 #index of item in answers
-                }
-            },
-
-            {
-                "name": "question 3 (multiselect)",
-                "type": "multi",
-                "data": {
-                    "question": "select odd numbers.",
-                    "answers": ["1", "2", "3", "4", "5", "6"],
-                    "answer": [0,2,4] #index of items in answers
-                }
-            },
-
-            {
-                "name": "question 4 (gimme code)",
-                "type": "code",
-                "data": {
-                    "question": "how to 1+1 in python?\nSet \"number\" variable to 1+1",
-                    "answers": ["number=1+1", "number=1;number+=1"]
-                }
-            },
-
-            {
-                "name": "question 5 (yes no)",
-                "type": "yn",
-                "data": {
-                    "question": "are you a human?",
-                    "answer": True
-                }
-            }
-        ]
-    },
-    "Beginner Py": {
-        "Starter Quiz": [
-            {
-                "name": "iq test",
-                "type": "yn",
-                "data": {
-                    "question": "yes?",
-                    "answer": True
-                }
-            }
-        ],
-        "Final Quiz": [
-            {
-                "name": "input test",
-                "type": "yn",
-                "data": {
-                    "question": "if i write number in input(), the function is going to convert it to intger?",
-                    "answer": False
-                }
-            }
-        ]
-    }
-}
-
 def cls():
     system("cls")
 
 def print_log(*text, priority=0):
-    if test:
+    if config["debug"]:
         if priority==0: prefix=  f"[{color.BOLD}{color.CYAN}INFO{color.RESET}]{color.CYAN}"
         elif priority==1: prefix=f"[{color.BOLD}{color.YELLOW}WARN{color.RESET}]{color.YELLOW}"
         elif priority==2: prefix=f"[{color.BOLD}{color.PURPLE}CRIT{color.RESET}]{color.PURPLE}"
@@ -113,60 +30,103 @@ def print_log(*text, priority=0):
 
         print(prefix, " ".join(text), color.RESET)
 
+# Checking if Tabulate is installed, If not, install it using pip
+try:
+    from tabulate import tabulate
+except ImportError:
+    pri
+    system("pip install tabulate")
+    from tabulate import tabulate
+
+# Getting Quiz Data from File
+if not path.isfile("quiz_data.json"):
+    print_log("The Quiz Data file Does not Exists. Please make a Quiz Data file", priority=3)
+    exit()
+with open("quiz_data.json") as f:
+    quiz_data = load(f)
+
+# Create a Default Config file
+config = {
+    "max_incomingdata": 16,
+    "do_grade_calculation": False,
+    "debug": True,
+    "port": 6363,
+}
+
 def start_server(port):
     global quiz_data
     import socket,threading,signal
     stop_event = threading.Event()
+
     def exit_gracefully(signal, frame):
         print("Ctrl+C detected. Stopping all threads...")
         stop_event.set()
         exit()
+
     def handle_client(client_socket):
         global quiz_data
         while True:
             try:
-                data = client_socket.recv(16384)
+                data = client_socket.recv(int(config["max_incomingdata"])*1024)
+                # Maximum incoming data in KB
             except ConnectionResetError:
                 print_log("A User disconnected!")
             if not data:
                 break
             rdata = data.decode().split(":")
             print_log("Received:", ":".join(rdata))
+
+            # If the user send a quiz request
             if rdata[0] == "iwantquiz":
                 username = rdata[1]
-                db = SQLiteManager("users");db.connect()
+                db = SQLiteManager("users")
+                db.connect()
                 userdata = db.get_record_from_table("users", f"username = '{username}'")
+                db.close_connection()
+
                 if userdata is None:
                     response = "invalidun:" + username
                     client_socket.send(response.encode())
                     print_log(f"Invalid Username for {username} Sent!")
                     continue
-
-                print(f"hey, {userdata[2]} wants a quiz, what quiz should i send?")
                 class_data = quiz_data[userdata[3]]
-                db.close_connection()
-                table_data = [{'Name': name, 'Questions': question} for name, question in \
-                    zip(list(class_data.keys()), [len(class_data[a]) \
-                    for a in class_data.keys()])]
-                print(tabulate(table_data, headers='keys', tablefmt='presto'))
-                while True:
-                    try:
-                        quizname = list(class_data.keys())[int(input("QuizIndex:> "))]
-                        break
-                    except IndexError: pass
+
+                if len(class_data) == 1:
+                    quizname = list(class_data.keys())[0]
+                else:
+                    print(f"Hey, {userdata[2]} wants to take quiz, what quiz should i send?")
+                    table_data = [{'Name': name, 'Questions': question} for name, question in \
+                        zip(list(class_data.keys()), [len(class_data[a]) \
+                        for a in class_data.keys()])]
+                    print(tabulate(table_data, headers='keys', tablefmt='presto'))
+                    while True:
+                        try:
+                            quizname = list(class_data.keys())[int(input("QuizIndex:> "))]
+                            break
+                        except IndexError: pass
                 response = "quiz: " + \
                            b64encode(dumps(class_data[quizname]).encode()).decode("utf-8")
+
                 try:
                     client_socket.send(response.encode())
                 except ConnectionResetError:
                     print_log("An connection was forcibly closed", priority=3)
+
                 print_log(f"Quiz Sent for {userdata[2]}!")
+
+            # If user wants to send the answers
             elif rdata[0] == "answers":
                 print_log(f"Got Answers from {rdata[1]}")
-                # do grade stuff
-                grade = -1 # because if grade eqals to -1, then client won't print the grade!
+
+                if config["do_grade_calculation"]:
+                    # do grade stuff
+                    pass
+                else:
+                    grade = -1 # if grade == -1, then client won't print the grade!
+
                 print_log(f"Grade for {rdata[1]} is {grade}!")
                 response = "grade:" + b64encode(str(grade).encode()).decode("utf-8")
+
                 try:
                     client_socket.send(response.encode())
                 except ConnectionResetError:
@@ -178,6 +138,7 @@ def start_server(port):
     server_socket.listen(5)
     print(f"listening on port {port}")
     signal.signal(signal.SIGINT, exit_gracefully)
+
     while True:
         client_socket, client_address = server_socket.accept()
         print_log("Accepted connection from:", str(client_address))
@@ -188,14 +149,10 @@ def start_server(port):
         except Exception as e:
             exit(e)
 
-if test:
-    start_server(int(12345))
+if config["debug"]:
+    start_server(int(config["port"]))
 else:
-    #start = input("Start Server [Y,n]? ")
-    #if start.lower()=="n":
-    #    pass
-    #elif start=="" or start.lower()=="y":
-    port = input("which port [12345]? ")
-    if not bool(port): port=12345
+    port = input(f"which port [{config['port']}]? ")
+    if not bool(port): port=int(config["port"])
     start_server(int(port))
     exit()

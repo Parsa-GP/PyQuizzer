@@ -181,13 +181,13 @@ def unpack(t:bin) -> str:
 if __name__ == "__main__":
     if DEBUG:
         host = "127.0.0.1"
-        port = 12345
+        port = 6363
     else:
         host = input("IP [127.0.0.1]: ")
-        port = input("PORT [12345]: ")
+        port = input("PORT [6363]: ")
 
         if not bool(host): host="127.0.0.1"
-        if not bool(port): port=12345
+        if not bool(port): port=6363
         else: port=int(port)
 
     # Flag to signal threads to stop
